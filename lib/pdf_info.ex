@@ -179,7 +179,10 @@ defmodule PDFInfo do
 
   @doc false
   def get_object(binary, obj_id) when is_binary(binary) and is_binary(obj_id) do
-    ~r{[^0-9]#{obj_id}\sobj.*?endobj}s
+    ~r{[^0-9](#{obj_id}\sobj.*?endobj)}s
     |> Regex.scan(binary)
+    |> Enum.map(fn
+      [_, obj] -> [obj]
+    end)
   end
 end
