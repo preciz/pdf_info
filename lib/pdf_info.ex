@@ -1,6 +1,6 @@
 defmodule PDFInfo do
   @moduledoc """
-  Extracts all /Info and /Metadata from a PDF binary using `Regex`
+  Extracts all /Info and /Metadata from a PDF binary using Regex
   and without any external dependencies.
   """
 
@@ -21,12 +21,12 @@ defmodule PDFInfo do
   Returns `{:ok, version}` if the PDF header is correct.
   Returns `:error` if the PDF header is incorrect.
   """
-  @spec version(binary) :: {:ok, binary} | :error
-  def version(<<"%PDF-">> <> <<version::binary-size(3)>> <> _) do
+  @spec pdf_version(binary) :: {:ok, binary} | :error
+  def pdf_version(<<"%PDF-">> <> <<version::binary-size(3)>> <> _) do
     {:ok, version}
   end
 
-  def version(_) do
+  def pdf_version(_) do
     :error
   end
 
@@ -44,8 +44,8 @@ defmodule PDFInfo do
   Returns `true` if PDF has at least one /Encrypt reference.
   Returns `false` if PDF has no /Encrypt reference.
   """
-  @spec encrypted?(binary) :: boolean
-  def encrypted?(binary) when is_binary(binary) do
+  @spec is_encrypted?(binary) :: boolean
+  def is_encrypted?(binary) when is_binary(binary) do
     case encrypt_refs(binary) do
       [] -> false
       _ -> true
@@ -95,6 +95,7 @@ defmodule PDFInfo do
         ]
       }
   """
+  @spec info_objects(binary) :: map
   def info_objects(binary) when is_binary(binary) do
     binary
     |> raw_info_objects
