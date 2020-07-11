@@ -14,7 +14,7 @@ defmodule PDFInfo.MixProject do
 
       # Hex
       package: package(),
-      description: "Extracts all /Info and /Metadata from a PDF binary using Regex.",
+      description: "Extracts all /Info and /Metadata objects from a PDF binary using Regex.",
 
       # Docs
       name: "PDFInfo",

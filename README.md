@@ -2,7 +2,7 @@
 
 ![Actions Status](https://github.com/preciz/pdf_info/workflows/test/badge.svg)
 
-Extracts all /Info and /Metadata from a PDF binary using Regex
+Extracts all /Info and /Metadata objects from a PDF binary using Regex
 and without any external dependencies.
 
 ## Installation
