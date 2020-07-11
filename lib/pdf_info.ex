@@ -130,7 +130,7 @@ defmodule PDFInfo do
   ## Examples
 
       iex> PDFInfo.raw_info_objects(binary)
-      %{"/Info 1 0 R" => ["1 0 obj\n<<..."]}
+      %{"/Info 1 0 R" => ["1 0 obj <<..."]}
 
   """
   @spec raw_info_objects(binary) :: map
