@@ -118,9 +118,39 @@ defmodule PDFInfo do
   @spec info_objects(binary) :: map
   def info_objects(binary) when is_binary(binary) do
     binary
-    |> raw_info_objects
+    |> raw_info_objects()
     |> Enum.reduce(%{}, fn {info_ref, list}, acc ->
       Map.put(acc, info_ref, Enum.map(list, &parse_info_object/1))
+    end)
+  end
+
+  @doc """
+  Maps /Metadata reference strings to objects and parses the objects.
+
+  ## Examples
+
+      iex> PDFInfo.info_objects(binary)
+      %{
+          "/Metadata 285 0 R" => [
+            %{
+              {"dc", "format"} => "application/pdf",
+              {"pdf", "Producer"} => "Adobe PDF Library 15.0",
+              {"xmp", "CreateDate"} => "2018-06-06T17:02:53+02:00",
+              {"xmp", "CreatorTool"} => "Acrobat PDFMaker 17 für Word",
+              {"xmp", "MetadataDate"} => "2018-06-06T17:03:13+02:00",
+              {"xmp", "ModifyDate"} => "2018-06-06T17:03:13+02:00",
+              ...
+            }
+          ]
+      }
+
+  """
+  @spec metadata_objects(binary) :: map
+  def metadata_objects(binary) when is_binary(binary) do
+    binary
+    |> raw_metadata_objects()
+    |> Enum.reduce(%{}, fn {meta_ref, list}, acc ->
+      Map.put(acc, meta_ref, Enum.map(list, &parse_metadata_object/1))
     end)
   end
 
@@ -195,6 +225,36 @@ defmodule PDFInfo do
       [_, key, val] -> {key, val}
     end)
     |> Map.new()
+  end
+
+  @doc false
+  def parse_metadata_object(string) when is_binary(string) do
+    with [xmp] <- Regex.run(~r{<x:xmpmeta.*?</x:xmpmeta}sm, string) do
+      dc_list = Regex.scan(~r{<dc:(.*?)>(.*?)</dc:(.*?)>}, xmp)
+      pdf_list = Regex.scan(~r{<pdf:(.*?)>(.*?)</pdf:(.*?)>}, xmp)
+      xmp_list = Regex.scan(~r{<xmp:(.*?)>(.*?)</xmp:(.*?)>}, xmp)
+      xmp_mm_list = Regex.scan(~r{<xmpMM:(.*?)>(.*?)</xmpMM:(.*?)>}, xmp)
+
+      %{}
+      |> reduce_metadata("dc", dc_list)
+      |> reduce_metadata("pdf", pdf_list)
+      |> reduce_metadata("xmp", xmp_list)
+      |> reduce_metadata("xmpMM", xmp_mm_list)
+    else
+      _ -> :error
+    end
+  end
+
+  @doc false
+  def reduce_metadata(acc, type, list) do
+    list
+    |> Enum.reduce(
+      acc,
+      fn
+        [_, key, val, key], acc -> Map.put(acc, {type, key}, val)
+        _, acc -> acc
+      end
+    )
   end
 
   @doc false
