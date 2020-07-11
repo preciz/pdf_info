@@ -129,7 +129,7 @@ defmodule PDFInfo do
 
   ## Examples
 
-      iex> PDFInfo.info_objects(binary)
+      iex> PDFInfo.metadata_objects(binary)
       %{
           "/Metadata 285 0 R" => [
             %{
