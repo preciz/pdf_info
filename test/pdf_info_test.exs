@@ -1,6 +1,5 @@
 defmodule PDFInfoTest do
   use ExUnit.Case
-  doctest PDFInfo
 
   @info_binary """
   trailer

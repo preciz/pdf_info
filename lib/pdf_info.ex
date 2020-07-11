@@ -20,6 +20,14 @@ defmodule PDFInfo do
 
   Returns `{:ok, version}` if the PDF header is correct.
   Returns `:error` if the PDF header is incorrect.
+
+  ## Examples
+
+      iex> PDFInfo.pdf_version(binary)
+      {:ok, "1.5"}
+      iex> PDFInfo.pdf_version("not a pdf")
+      :error
+
   """
   @spec pdf_version(binary) :: {:ok, binary} | :error
   def pdf_version(<<"%PDF-">> <> <<version::binary-size(3)>> <> _) do
@@ -32,6 +40,12 @@ defmodule PDFInfo do
 
   @doc """
   Returns a list of /Encrypt reference strings.
+
+  ## Examples
+
+      iex> PDFInfo.encrypt_refs(binary)
+      ["/Encrypt 52 0 R"]
+
   """
   @spec encrypt_refs(binary) :: list
   def encrypt_refs(binary) when is_binary(binary) do
@@ -55,9 +69,11 @@ defmodule PDFInfo do
   @doc """
   Returns a list of /Info reference strings.
 
-  Example:
+  ## Examples
 
+      iex> PDFInfo.info_refs(binary)
       ["/Info 1 0 R"]
+
   """
   @spec info_refs(binary) :: list
   def info_refs(binary) when is_binary(binary) do
@@ -69,9 +85,11 @@ defmodule PDFInfo do
   @doc """
   Returns a list of /Metadata reference strings.
 
-  Example:
+  ## Examples
 
+      iex> PDFInfo.metadata_refs(binary)
       ["/Metadata 5 0 R"]
+
   """
   @spec metadata_refs(binary) :: list
   def metadata_refs(binary) when is_binary(binary) do
@@ -81,10 +99,11 @@ defmodule PDFInfo do
   end
 
   @doc """
-  Maps and parses the /Info reference strings.
+  Maps /Info reference strings to objects and parses the objects.
 
-  Example:
+  ## Examples
 
+      iex> PDFInfo.info_objects(binary)
       %{
         "/Info 1 0 R" => [
             %{
@@ -94,6 +113,7 @@ defmodule PDFInfo do
             }
         ]
       }
+
   """
   @spec info_objects(binary) :: map
   def info_objects(binary) when is_binary(binary) do
@@ -107,11 +127,11 @@ defmodule PDFInfo do
   @doc """
   Maps the /Info reference strings to the raw objects.
 
-  Example:
+  ## Examples
 
-      %{
-        "/Info 1 0 R" => ["\n1 0 obj\n<<..."]
-      }
+      iex> PDFInfo.raw_info_objects(binary)
+      %{"/Info 1 0 R" => ["1 0 obj\n<<..."]}
+
   """
   @spec raw_info_objects(binary) :: map
   def raw_info_objects(binary) when is_binary(binary) do
@@ -139,11 +159,11 @@ defmodule PDFInfo do
   @doc """
   Maps the /Metadata reference strings to the raw objects.
 
-  Example:
+  ## Examples
 
-      %{
-        "/Metadata 5 0 R" => ["\n5 0 obj\..."]
-      }
+      iex> PDFInfo.raw_metadata_objects(binary)
+      %{"/Metadata 5 0 R" => ["5 0 obj\..."]}
+
   """
   @spec raw_metadata_objects(binary) :: map
   def raw_metadata_objects(binary) when is_binary(binary) do
