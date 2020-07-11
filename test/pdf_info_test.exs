@@ -129,4 +129,23 @@ defmodule PDFInfoTest do
     assert String.starts_with?(metadata, "5 0 obj")
     assert String.ends_with?(metadata, "endobj")
   end
+
+  test "Parses /Metadata object" do
+    assert PDFInfo.metadata_objects(@metadata_binary) == %{
+             "/Metadata 5 0 R" => [
+               %{
+                 {"dc", "creator"} => "The PostgreSQL Global Development Group",
+                 {"dc", "date"} => "2020-02-12T21:27:56Z",
+                 {"dc", "format"} => "application/pdf",
+                 {"dc", "language"} => "en",
+                 {"dc", "title"} => "PostgreSQL 12.2 Documentation",
+                 {"pdf", "PDFVersion"} => "1.4",
+                 {"pdf", "Producer"} => "Apache FOP Version 2.3",
+                 {"xmp", "CreateDate"} => "2020-02-12T21:27:56Z",
+                 {"xmp", "CreatorTool"} => "DocBook XSL Stylesheets with Apache FOP",
+                 {"xmp", "MetadataDate"} => "2020-02-12T21:27:56Z"
+               }
+             ]
+           }
+  end
 end
