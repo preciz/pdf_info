@@ -220,7 +220,7 @@ defmodule PDFInfo do
 
   @doc false
   def parse_info_object(string) when is_binary(string) do
-    Regex.scan(~r{/(.*?)\s.*?\((.*?)\)}, string)
+    Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
     |> Enum.map(fn
       [_, key, val] -> {key, val}
     end)
