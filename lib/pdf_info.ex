@@ -1,6 +1,7 @@
 defmodule PDFInfo do
   @moduledoc """
-  The goal of PDFInfo is to extract all metadata from a PDF binary without any external dependencies.
+  Extracts all /Info and /Metadata from a PDF binary using `Regex`
+  and without any external dependencies.
   """
 
   @doc """
@@ -21,7 +22,7 @@ defmodule PDFInfo do
   Returns `:error` if the PDF header is incorrect.
   """
   @spec version(binary) :: {:ok, binary} | :error
-  def version(<<"%PDF-">> <> <<version :: binary-size(3)>> <> _) do
+  def version(<<"%PDF-">> <> <<version::binary-size(3)>> <> _) do
     {:ok, version}
   end
 
@@ -80,7 +81,30 @@ defmodule PDFInfo do
   end
 
   @doc """
-  Maps the /Info reference strings to objects.
+  Maps and parses the /Info reference strings.
+
+  Example:
+
+      %{
+        "/Info 1 0 R" => [
+            %{
+                "Author" => "The PostgreSQL Global Development Group",
+                "CreationDate" => "D:20200212212756Z",
+                ...
+            }
+        ]
+      }
+  """
+  def info_objects(binary) when is_binary(binary) do
+    binary
+    |> raw_info_objects
+    |> Enum.reduce(%{}, fn {info_ref, list}, acc ->
+      Map.put(acc, info_ref, Enum.map(list, &parse_info_object/1))
+    end)
+  end
+
+  @doc """
+  Maps the /Info reference strings to the raw objects.
 
   Example:
 
@@ -88,8 +112,8 @@ defmodule PDFInfo do
         "/Info 1 0 R" => ["\n1 0 obj\n<<..."]
       }
   """
-  @spec info_objects(binary) :: map
-  def info_objects(binary) when is_binary(binary) do
+  @spec raw_info_objects(binary) :: map
+  def raw_info_objects(binary) when is_binary(binary) do
     binary
     |> info_refs()
     |> Enum.reduce(%{}, fn info_ref, acc ->
@@ -98,8 +122,7 @@ defmodule PDFInfo do
         |> String.trim_leading("/Info ")
         |> String.trim_trailing(" R")
 
-      ~r{[^0-9]#{obj_id}\sobj.*?endobj}s
-      |> Regex.scan(binary)
+      get_object(binary, obj_id)
       |> case do
         [] ->
           Map.put(acc, info_ref, [])
@@ -113,7 +136,7 @@ defmodule PDFInfo do
   end
 
   @doc """
-  Maps the /Metadata reference strings to objects.
+  Maps the /Metadata reference strings to the raw objects.
 
   Example:
 
@@ -121,8 +144,8 @@ defmodule PDFInfo do
         "/Metadata 5 0 R" => ["\n5 0 obj\..."]
       }
   """
-  @spec metadata_objects(binary) :: map
-  def metadata_objects(binary) when is_binary(binary) do
+  @spec raw_metadata_objects(binary) :: map
+  def raw_metadata_objects(binary) when is_binary(binary) do
     binary
     |> metadata_refs()
     |> Enum.reduce(%{}, fn meta_ref, acc ->
@@ -131,8 +154,7 @@ defmodule PDFInfo do
         |> String.trim_leading("/Metadata ")
         |> String.trim_trailing(" R")
 
-      ~r{[^0-9]#{obj_id}\sobj.*?endobj}s
-      |> Regex.scan(binary)
+      get_object(binary, obj_id)
       |> case do
         [] ->
           Map.put(acc, meta_ref, [])
@@ -143,5 +165,20 @@ defmodule PDFInfo do
           Map.put(acc, meta_ref, list)
       end
     end)
+  end
+
+  @doc false
+  def parse_info_object(string) when is_binary(string) do
+    Regex.scan(~r{/(.*?)\s.*?\((.*?)\)}, string)
+    |> Enum.map(fn
+      [_, key, val] -> {key, val}
+    end)
+    |> Map.new()
+  end
+
+  @doc false
+  def get_object(binary, obj_id) when is_binary(binary) and is_binary(obj_id) do
+    ~r{[^0-9]#{obj_id}\sobj.*?endobj}s
+    |> Regex.scan(binary)
   end
 end
