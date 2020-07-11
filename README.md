@@ -17,7 +17,14 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/pdf_info](https://hexdocs.pm/pdf_info).
+## Documentation
 
+Documentation can be be found at [https://hexdocs.pm/pdf_info](https://hexdocs.pm/pdf_info).
+
+## License
+
+PDFInfo is [MIT licensed](LICENSE).
+
+## Credit
+
+Inspired by [https://gitlab.com/nxl4/pdf-metadata](https://gitlab.com/nxl4/pdf-metadata)
