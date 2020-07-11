@@ -1,11 +1,13 @@
-# PdfInfo
+# PDFInfo
 
-**TODO: Add description**
+![Actions Status](https://github.com/preciz/pdf_info/workflows/test/badge.svg)
+
+Extracts all /Info and /Metadata from a PDF binary using Regex
+and without any external dependencies.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `pdf_info` to your list of dependencies in `mix.exs`:
+Add `pdf_info` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
