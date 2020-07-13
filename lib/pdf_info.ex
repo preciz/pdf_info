@@ -149,9 +149,8 @@ defmodule PDFInfo do
   def metadata_objects(binary) when is_binary(binary) do
     binary
     |> raw_metadata_objects()
-    |> Enum.reduce(%{}, fn {meta_ref, list}, acc ->
-      Map.put(acc, meta_ref, Enum.map(list, &parse_metadata_object/1))
-    end)
+    |> Enum.flat_map(& &1)
+    |> Enum.map(&parse_metadata_object/1)
   end
 
   @doc """
@@ -197,25 +196,7 @@ defmodule PDFInfo do
   """
   @spec raw_metadata_objects(binary) :: map
   def raw_metadata_objects(binary) when is_binary(binary) do
-    binary
-    |> metadata_refs()
-    |> Enum.reduce(%{}, fn meta_ref, acc ->
-      obj_id =
-        meta_ref
-        |> String.trim_leading("/Metadata ")
-        |> String.trim_trailing(" R")
-
-      get_object(binary, obj_id)
-      |> case do
-        [] ->
-          Map.put(acc, meta_ref, [])
-
-        list when is_list(list) ->
-          list = list |> Enum.flat_map(& &1) |> Enum.uniq()
-
-          Map.put(acc, meta_ref, list)
-      end
-    end)
+    Regex.scan(~r{<x:xmpmeta.*?>.*</x:xmpmeta>}ms, binary)
   end
 
   @doc false
@@ -231,42 +212,47 @@ defmodule PDFInfo do
       |> Enum.map(fn
         [_, key, val] -> {key, val}
       end)
-      |> Enum.reduce([], fn
-        {key, "feff" <> base_16_encoded_utf16_big_endian}, acc ->
-          base_16_encoded_utf16_big_endian
-          |> String.replace(~r{[^0-9a-f]}, "")
-          |> Base.decode16(case: :lower)
-          |> case do
-            {:ok, ut16_binary} ->
-              string = :unicode.characters_to_binary(ut16_binary, {:utf16, :big})
-
-              [{key, string} | acc]
-
-            :error ->
-              acc
-          end
-
-        {key, val}, acc ->
-          [{key, val} | acc]
-      end)
 
     Enum.concat(strings, hex)
+    |> Enum.reduce([], fn
+      {key, "feff" <> base_16_encoded_utf16_big_endian}, acc ->
+        base_16_encoded_utf16_big_endian
+        |> String.replace(~r{[^0-9a-f]}, "")
+        |> Base.decode16(case: :lower)
+        |> case do
+          {:ok, utf16} ->
+            endianness = determine_endianness(utf16, :big)
+
+            string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
+
+            [{key, string} | acc]
+
+          :error ->
+            acc
+        end
+
+      {key, <<254, 255>> <> utf16}, acc ->
+        endianness = determine_endianness(utf16, :big)
+
+        string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
+
+        [{key, string} | acc]
+
+      {key, val}, acc ->
+        [{key, val} | acc]
+    end)
     |> Map.new()
   end
 
   @doc false
   def parse_metadata_object(string) when is_binary(string) do
     with [xmp] <- Regex.run(~r{<x:xmpmeta.*?</x:xmpmeta}sm, string) do
-      dc_list = Regex.scan(~r{<dc:(.*?)>(.*?)</dc:(.*?)>}, xmp)
-      pdf_list = Regex.scan(~r{<pdf:(.*?)>(.*?)</pdf:(.*?)>}, xmp)
-      xmp_list = Regex.scan(~r{<xmp:(.*?)>(.*?)</xmp:(.*?)>}, xmp)
-      xmp_mm_list = Regex.scan(~r{<xmpMM:(.*?)>(.*?)</xmpMM:(.*?)>}, xmp)
+      ["dc", "pdf", "pdfx", "xap", "xapMM", "xmp", "xmpMM"]
+      |> Enum.reduce(%{}, fn tag, acc ->
+        list = Regex.scan(~r{<#{tag}:(.*?)>(.*?)</#{tag}:(.*?)>}sm, xmp)
 
-      %{}
-      |> reduce_metadata("dc", dc_list)
-      |> reduce_metadata("pdf", pdf_list)
-      |> reduce_metadata("xmp", xmp_list)
-      |> reduce_metadata("xmpMM", xmp_mm_list)
+        reduce_metadata(acc, tag, list)
+      end)
     else
       _ -> :error
     end
@@ -278,8 +264,15 @@ defmodule PDFInfo do
     |> Enum.reduce(
       acc,
       fn
-        [_, key, val, key], acc -> Map.put(acc, {type, key}, val)
-        _, acc -> acc
+        [_, key, val, key], acc ->
+          case Regex.scan(~r{<rdf.*?>([^<\n].*?)</rdf}m, val)
+               |> Enum.min_by(fn [_, inner_val] -> byte_size(inner_val) end, fn -> [] end) do
+            [_, inner_val] -> Map.put(acc, {type, key}, inner_val)
+            [] -> Map.put(acc, {type, key}, val)
+          end
+
+        _, acc ->
+          acc
       end
     )
   end
@@ -291,5 +284,33 @@ defmodule PDFInfo do
     |> Enum.map(fn
       [_, obj] -> [obj]
     end)
+  end
+
+  @doc false
+  def determine_endianness(binary, initial_guess) do
+    determine_endianness(binary, initial_guess, 0, 0)
+  end
+
+  defp determine_endianness(<<>>, _, little_zeroes, big_zeroes) do
+    case {little_zeroes, big_zeroes} do
+      {lz, bz} when lz > bz -> :little
+      {lz, bz} when bz >= lz -> :big
+    end
+  end
+
+  defp determine_endianness(<<0>> <> binary, :little, little_zeroes, big_zeroes) do
+    determine_endianness(binary, :big, little_zeroes + 1, big_zeroes)
+  end
+
+  defp determine_endianness(<<0>> <> binary, :big, little_zeroes, big_zeroes) do
+    determine_endianness(binary, :little, little_zeroes, big_zeroes + 1)
+  end
+
+  defp determine_endianness(<<_>> <> binary, :little, little_zeroes, big_zeroes) do
+    determine_endianness(binary, :big, little_zeroes, big_zeroes)
+  end
+
+  defp determine_endianness(<<_>> <> binary, :big, little_zeroes, big_zeroes) do
+    determine_endianness(binary, :little, little_zeroes, big_zeroes)
   end
 end

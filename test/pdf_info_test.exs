@@ -149,27 +149,91 @@ defmodule PDFInfoTest do
   end
 
   test "Extracts raw /Metadata object" do
-    assert %{"/Metadata 5 0 R" => [metadata]} = PDFInfo.raw_metadata_objects(@metadata_binary)
-    assert String.starts_with?(metadata, "5 0 obj")
-    assert String.ends_with?(metadata, "endobj")
+    assert [["<x:xmpmeta" <> _]] = PDFInfo.raw_metadata_objects(@metadata_binary)
+  end
+
+  test "Parses /Info non-hex utf16 and corrects endianness" do
+    binary =
+      <<51, 32, 48, 32, 111, 98, 106, 10, 60, 60, 47, 67, 114, 101, 97, 116, 111, 114, 40, 81,
+        117, 97, 114, 107, 88, 80, 114, 101, 115, 115, 92, 40, 82, 92, 41, 32, 49, 52, 46, 48, 49,
+        41, 47, 88, 80, 114, 101, 115, 115, 80, 114, 105, 118, 97, 116, 101, 40, 37, 37, 68, 111,
+        99, 117, 109, 101, 110, 116, 80, 114, 111, 99, 101, 115, 115, 67, 111, 108, 111, 114, 115,
+        58, 32, 67, 121, 97, 110, 32, 77, 97, 103, 101, 110, 116, 97, 32, 89, 101, 108, 108, 111,
+        119, 32, 66, 108, 97, 99, 107, 92, 48, 49, 50, 37, 37, 69, 110, 100, 67, 111, 109, 109,
+        101, 110, 116, 115, 41, 47, 84, 105, 116, 108, 101, 40, 254, 255, 0, 50, 0, 48, 0, 83, 0,
+        101, 0, 105, 0, 116, 0, 101, 0, 110, 41, 47, 67, 114, 101, 97, 116, 105, 111, 110, 68, 97,
+        116, 101, 40, 68, 58, 50, 48, 49, 57, 48, 52, 50, 51, 49, 52, 52, 51, 52, 57, 43, 48, 49,
+        39, 48, 48, 39, 41, 47, 80, 114, 111, 100, 117, 99, 101, 114, 40, 81, 117, 97, 114, 107,
+        88, 80, 114, 101, 115, 115, 92, 40, 82, 92, 41, 32, 49, 52, 46, 48, 49, 41, 47, 65, 117,
+        116, 104, 111, 114, 40, 254, 255, 65, 0, 110, 0, 100, 0, 114, 0, 101, 0, 97, 0, 115, 0,
+        32, 0, 72, 0, 246, 0, 110, 0, 105, 0, 103, 0, 41, 47, 77, 111, 100, 68, 97, 116, 101, 40,
+        68, 58, 50, 48, 49, 57, 48, 52, 50, 51, 49, 52, 52, 51, 52, 57, 43, 48, 49, 39, 48, 48,
+        39, 41, 62, 62, 10, 101, 110, 100, 111, 98, 106>>
+
+    assert PDFInfo.parse_info_object(binary) == %{
+             "Author" => "Andreas Hönig",
+             "CreationDate" => "D:20190423144349+01'00'",
+             "Creator" => "QuarkXPress\\(R\\",
+             "ModDate" => "D:20190423144349+01'00'",
+             "Producer" => "QuarkXPress\\(R\\",
+             "Title" => "20Seiten",
+             "XPressPrivate" =>
+               "%%DocumentProcessColors: Cyan Magenta Yellow Black\\012%%EndComments"
+           }
   end
 
   test "Parses /Metadata object" do
-    assert PDFInfo.metadata_objects(@metadata_binary) == %{
-             "/Metadata 5 0 R" => [
-               %{
-                 {"dc", "creator"} => "The PostgreSQL Global Development Group",
-                 {"dc", "date"} => "2020-02-12T21:27:56Z",
-                 {"dc", "format"} => "application/pdf",
-                 {"dc", "language"} => "en",
-                 {"dc", "title"} => "PostgreSQL 12.2 Documentation",
-                 {"pdf", "PDFVersion"} => "1.4",
-                 {"pdf", "Producer"} => "Apache FOP Version 2.3",
-                 {"xmp", "CreateDate"} => "2020-02-12T21:27:56Z",
-                 {"xmp", "CreatorTool"} => "DocBook XSL Stylesheets with Apache FOP",
-                 {"xmp", "MetadataDate"} => "2020-02-12T21:27:56Z"
-               }
-             ]
-           }
+    assert PDFInfo.metadata_objects(@metadata_binary) == [
+             %{
+               {"dc", "creator"} => "The PostgreSQL Global Development Group",
+               {"dc", "date"} => "2020-02-12T21:27:56Z",
+               {"dc", "format"} => "application/pdf",
+               {"dc", "language"} => "en",
+               {"dc", "title"} => "PostgreSQL 12.2 Documentation",
+               {"pdf", "PDFVersion"} => "1.4",
+               {"pdf", "Producer"} => "Apache FOP Version 2.3",
+               {"xmp", "CreateDate"} => "2020-02-12T21:27:56Z",
+               {"xmp", "CreatorTool"} => "DocBook XSL Stylesheets with Apache FOP",
+               {"xmp", "MetadataDate"} => "2020-02-12T21:27:56Z"
+             }
+           ]
+  end
+
+  test "Parses metadata with <xap> tags and removed <rdf> tags from parsed values" do
+    binary = """
+    /Metadata 13 0 R\" => [\"13 0 obj\n<</Type/Metadata\n/Subtype/XML/Length 1378>>stream\n<?xpacket begin='\uFEFF' id='W5M0MpCehiHzreSzNTczkc9d'?>\n<?adobe-xap-filters esc=\"CRLF\"?>\n<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>\n<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:iX='http://ns.adobe.com/iX/1.0/'>\n<rdf:Description rdf:about='45b761fe-38d9-11e0-0000-b0e2024cf9b3' xmlns:pdf='http://ns.adobe.com/pdf/1.3/' pdf:Producer='GPL Ghostscript 8.61'/>\n<rdf:Description rdf:about='45b761fe-38d9-11e0-0000-b0e2024cf9b3' xmlns:xap='http://ns.adobe.com/xap/1.0/' xap:ModifyDate='2011-02-12T08:57:26+01:00' xap:CreateDate='2011-02-12T08:57:26+01:00'><xap:CreatorTool>PDFCreator Version 0.9.5</xap:CreatorTool></rdf:Description>\n<rdf:Description rdf:about='45b761fe-38d9-11e0-0000-b0e2024cf9b3' xmlns:xapMM='http://ns.adobe.com/xap/1.0/mm/' xapMM:DocumentID='45b761fe-38d9-11e0-0000-b0e2024cf9b3'/>\n<rdf:Description rdf:about='45b761fe-38d9-11e0-0000-b0e2024cf9b3' xmlns:dc='http://purl.org/dc/elements/1.1/' dc:format='application/pdf'><dc:title><rdf:Alt><rdf:li xml:lang='x-default'>Ganzseitiger Faxausdruck</rdf:li></rdf:Alt></dc:title><dc:creator><rdf:Seq><rdf:li>hjeinwag</rdf:li></rdf:Seq></dc:creator></rdf:Description>\n</rdf:RDF>\n</x:xmpmeta>
+    """
+
+    PDFInfo.parse_metadata_object(binary)
+  end
+
+  test "Parses metadata with <rdf> tags containing newlines" do
+    binary = """
+    <?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+    <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c148 79.163765, 2019/01/24-18:11:46        ">
+       <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+          <rdf:Description rdf:about=""
+                xmlns:dc="http://purl.org/dc/elements/1.1/"
+                xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
+                xmlns:pdfxid="http://www.npes.org/pdfx/ns/id/"
+                xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/">
+             <dc:creator>
+                <rdf:Seq>
+                   <rdf:li>from nested</rdf:li>
+                </rdf:Seq>
+             </dc:creator>
+             <dc:title>
+                <rdf:Alt>
+                   <rdf:li xml:lang="x-default">from nested</rdf:li>
+                </rdf:Alt>
+             </dc:title>
+          </rdf:Description>
+       </rdf:RDF>
+    </x:xmpmeta>
+    <?xpacket end="r"?>
+    """
+
+    assert PDFInfo.metadata_objects(binary) == [%{{"dc", "creator"} => "from nested", {"dc", "title"} => "from nested"}]
   end
 end
