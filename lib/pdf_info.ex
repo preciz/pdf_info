@@ -172,16 +172,12 @@ defmodule PDFInfo do
         |> String.trim_leading("/Info ")
         |> String.trim_trailing(" R")
 
-      get_object(binary, obj_id)
-      |> case do
-        [] ->
-          Map.put(acc, info_ref, [])
+      list =
+        get_object(binary, obj_id)
+        |> Enum.flat_map(& &1)
+        |> Enum.uniq()
 
-        list when is_list(list) ->
-          list = list |> Enum.flat_map(& &1) |> Enum.uniq()
-
-          Map.put(acc, info_ref, list)
-      end
+      Map.put(acc, info_ref, list)
     end)
   end
 
