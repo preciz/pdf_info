@@ -261,11 +261,16 @@ defmodule PDFInfo do
       acc,
       fn
         [_, key, val, key], acc ->
-          case Regex.scan(~r{<rdf.*?>([^<\n].*?)</rdf}m, val)
-               |> Enum.min_by(fn [_, inner_val] -> byte_size(inner_val) end, fn -> [] end) do
-            [_, inner_val] -> Map.put(acc, {type, key}, inner_val)
-            [] -> Map.put(acc, {type, key}, val)
-          end
+          val =
+            Regex.scan(~r{<rdf.*?>([^<\n].*?)</rdf}m, val)
+            |> Enum.min_by(fn [_, inner_val] -> byte_size(inner_val) end, fn -> [] end)
+            |> case do
+              [_, inner_val] -> inner_val
+              [] -> val
+            end
+            |> String.trim()
+
+          Map.put(acc, {type, key}, val)
 
         _, acc ->
           acc
