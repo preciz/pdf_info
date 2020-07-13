@@ -292,26 +292,26 @@ defmodule PDFInfo do
     determine_endianness(binary, initial_guess, 0, 0)
   end
 
-  defp determine_endianness(<<>>, _, little_zeroes, big_zeroes) do
-    case {little_zeroes, big_zeroes} do
+  defp determine_endianness(<<>>, _, little_zeros, big_zeros) do
+    case {little_zeros, big_zeros} do
       {lz, bz} when lz > bz -> :little
       {lz, bz} when bz >= lz -> :big
     end
   end
 
-  defp determine_endianness(<<0>> <> binary, :little, little_zeroes, big_zeroes) do
-    determine_endianness(binary, :big, little_zeroes + 1, big_zeroes)
+  defp determine_endianness(<<0>> <> binary, :little, little_zeros, big_zeros) do
+    determine_endianness(binary, :big, little_zeros + 1, big_zeros)
   end
 
-  defp determine_endianness(<<0>> <> binary, :big, little_zeroes, big_zeroes) do
-    determine_endianness(binary, :little, little_zeroes, big_zeroes + 1)
+  defp determine_endianness(<<0>> <> binary, :big, little_zeros, big_zeros) do
+    determine_endianness(binary, :little, little_zeros, big_zeros + 1)
   end
 
-  defp determine_endianness(<<_>> <> binary, :little, little_zeroes, big_zeroes) do
-    determine_endianness(binary, :big, little_zeroes, big_zeroes)
+  defp determine_endianness(<<_>> <> binary, :little, little_zeros, big_zeros) do
+    determine_endianness(binary, :big, little_zeros, big_zeros)
   end
 
-  defp determine_endianness(<<_>> <> binary, :big, little_zeroes, big_zeroes) do
-    determine_endianness(binary, :little, little_zeroes, big_zeroes)
+  defp determine_endianness(<<_>> <> binary, :big, little_zeros, big_zeros) do
+    determine_endianness(binary, :little, little_zeros, big_zeros)
   end
 end
