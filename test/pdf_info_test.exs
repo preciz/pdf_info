@@ -234,6 +234,31 @@ defmodule PDFInfoTest do
     <?xpacket end="r"?>
     """
 
-    assert PDFInfo.metadata_objects(binary) == [%{{"dc", "creator"} => "from nested", {"dc", "title"} => "from nested"}]
+    assert PDFInfo.metadata_objects(binary) == [
+             %{{"dc", "creator"} => "from nested", {"dc", "title"} => "from nested"}
+           ]
+  end
+
+  test "Parses info object if there is a newline after obj" do
+    binary = """
+    694 0 obj
+    <</Type/XRef/Size 694/W[ 1 4 2] /Root 1 0 R/Info 63 0 R/ID[<1EA6838B685AD14F98F5E1E35B0A1E5A><1EA6838B685AD14F98F5E1E35B0A1E5A>] /Filter/FlateDecode/Length 1419>>
+    stream
+
+    endobj
+    63 0 obj
+    <</Author(Bella, Bela)  /ModDate(D:20151214132107+01'00')  >>
+    endobj
+    70 0 obj
+    """
+
+    assert PDFInfo.info_objects(binary) == %{
+             "/Info 63 0 R" => [
+               %{
+                 "Author" => "Bella, Bela",
+                 "ModDate" => "D:20151214132107+01'00'"
+               }
+             ]
+           }
   end
 end
