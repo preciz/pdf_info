@@ -285,6 +285,7 @@ defmodule PDFInfo do
     |> Regex.scan(binary)
   end
 
+  # it can have messed up byte order marker
   @doc false
   def determine_endianness(binary, initial_guess) do
     determine_endianness(binary, initial_guess, 0, 0)
