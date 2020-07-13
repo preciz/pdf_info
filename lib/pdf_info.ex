@@ -220,10 +220,37 @@ defmodule PDFInfo do
 
   @doc false
   def parse_info_object(string) when is_binary(string) do
-    Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
-    |> Enum.map(fn
-      [_, key, val] -> {key, val}
-    end)
+    strings =
+      Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
+      |> Enum.map(fn
+        [_, key, val] -> {key, val}
+      end)
+
+    hex =
+      Regex.scan(~r{/([^ /]+)\s*<(.*?)>}, string)
+      |> Enum.map(fn
+        [_, key, val] -> {key, val}
+      end)
+      |> Enum.reduce([], fn
+        {key, "feff" <> base_16_encoded_utf16_big_endian}, acc ->
+          base_16_encoded_utf16_big_endian
+          |> String.replace(~r{[^0-9a-f]}, "")
+          |> Base.decode16(case: :lower)
+          |> case do
+            {:ok, ut16_binary} ->
+              string = :unicode.characters_to_binary(ut16_binary, {:utf16, :big})
+
+              [{key, string} | acc]
+
+            :error ->
+              acc
+          end
+
+        {key, val}, acc ->
+          [{key, val} | acc]
+      end)
+
+    Enum.concat(strings, hex)
     |> Map.new()
   end
 
