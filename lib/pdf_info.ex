@@ -216,7 +216,7 @@ defmodule PDFInfo do
       end)
 
     hex =
-      Regex.scan(~r{/([^ /]+)\s*<(.*?)>}, string)
+      Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
       |> Enum.map(fn
         [_, key, val] -> {key, val}
       end)
