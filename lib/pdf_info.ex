@@ -267,6 +267,7 @@ defmodule PDFInfo do
     :unicode.characters_to_binary(string, {:utf16, endianness})
   end
 
+  @doc false
   def fix_null_padding(binary) do
     fix_null_padding(binary, "")
   end
