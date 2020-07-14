@@ -186,10 +186,10 @@ defmodule PDFInfo do
   ## Examples
 
       iex> PDFInfo.raw_metadata_objects(binary)
-      %{"/Metadata 5 0 R" => ["5 0 obj\..."]}
+      ["<x:xmpmeta" <> ...]
 
   """
-  @spec raw_metadata_objects(binary) :: map
+  @spec raw_metadata_objects(binary) :: list
   def raw_metadata_objects(binary) when is_binary(binary) do
     Enum.zip(
       Regex.scan(~r{<x:xmpmeta}, binary, return: :index),
