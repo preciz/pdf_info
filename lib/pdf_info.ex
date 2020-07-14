@@ -258,6 +258,19 @@ defmodule PDFInfo do
       {key, val}, acc ->
         [{key, val} | acc]
     end)
+    |> Enum.map(fn {key, val} ->
+      {
+        key,
+        case String.printable?(val) do
+          false ->
+            # Fix for non printable binary like <<252>> = ü
+            val |> :binary.bin_to_list() |> :unicode.characters_to_binary()
+
+          true ->
+            val
+        end
+      }
+    end)
     |> Map.new()
   end
 
