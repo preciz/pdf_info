@@ -231,6 +231,8 @@ defmodule PDFInfo do
           {:ok, utf16} ->
             endianness = determine_endianness(utf16, :big)
 
+            utf16 = utf16_size_fix(utf16)
+
             string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
 
             [{key, string} | acc]
@@ -241,6 +243,8 @@ defmodule PDFInfo do
 
       {key, <<254, 255>> <> utf16}, acc ->
         endianness = determine_endianness(utf16, :big)
+
+        utf16 = utf16_size_fix(utf16)
 
         string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
 
@@ -265,6 +269,14 @@ defmodule PDFInfo do
     endianness = string |> determine_endianness(:big)
 
     :unicode.characters_to_binary(string, {:utf16, endianness})
+  end
+
+  @doc false
+  def utf16_size_fix(binary) do
+    case rem(byte_size(binary), 2) do
+      0 -> binary
+      1 -> binary <> <<0>>
+    end
   end
 
   @doc false
