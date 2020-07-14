@@ -149,7 +149,6 @@ defmodule PDFInfo do
   def metadata_objects(binary) when is_binary(binary) do
     binary
     |> raw_metadata_objects()
-    |> Enum.flat_map(& &1)
     |> Enum.map(&parse_metadata_object/1)
   end
 
@@ -192,7 +191,19 @@ defmodule PDFInfo do
   """
   @spec raw_metadata_objects(binary) :: map
   def raw_metadata_objects(binary) when is_binary(binary) do
-    Regex.scan(~r{<x:xmpmeta.*?>.*</x:xmpmeta>}ms, binary)
+    Enum.zip(
+      Regex.scan(~r{<x:xmpmeta}, binary, return: :index),
+      Regex.scan(~r{</x:xmpmeta}, binary, return: :index)
+    )
+    |> Enum.reduce([], fn
+      {[{start_position, _}], [{end_position, _}]}, acc when start_position < end_position ->
+        raw_meta = binary_part(binary, start_position, end_position - start_position) <> "</x:xmpmeta>"
+
+        [raw_meta | acc]
+
+      _, acc ->
+        acc
+    end)
   end
 
   @doc false
@@ -238,6 +249,7 @@ defmodule PDFInfo do
         # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
 
         [{key, fix_null_padded_utf16(rest)} | acc]
+
       {key, val}, acc ->
         [{key, val} | acc]
     end)
@@ -258,7 +270,6 @@ defmodule PDFInfo do
 
     :unicode.characters_to_binary(string, {:utf16, endianness})
   end
-
 
   @doc false
   def parse_metadata_object(string) when is_binary(string) do

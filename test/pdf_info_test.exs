@@ -149,7 +149,7 @@ defmodule PDFInfoTest do
   end
 
   test "Extracts raw /Metadata object" do
-    assert [["<x:xmpmeta" <> _]] = PDFInfo.raw_metadata_objects(@metadata_binary)
+    assert ["<x:xmpmeta" <> _ | _] = PDFInfo.raw_metadata_objects(@metadata_binary)
   end
 
   test "Parses /Info non-hex utf16 and corrects endianness" do
