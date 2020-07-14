@@ -339,13 +339,12 @@ defmodule PDFInfo do
       acc,
       fn
         [_, key, val, key], acc ->
+          # remove rdf tags like <rdf:Alt>, </rdf:Alt>, <rdf:li ... />
           val =
-            Regex.scan(~r{<rdf.*?>([^<\n].*?)</rdf}m, val)
-            |> Enum.min_by(fn [_, inner_val] -> byte_size(inner_val) end, fn -> [] end)
-            |> case do
-              [_, inner_val] -> inner_val
-              [] -> val
-            end
+            val
+            |> String.replace(~r{<[a-z]+:[a-z]+>}i, " ")
+            |> String.replace(~r{</[a-z]+:[a-z]+>}i, " ")
+            |> String.replace(~r{<[a-z]+:.+/>}i, " ")
             |> String.trim()
 
           Map.put(acc, {type, key}, val)
