@@ -234,11 +234,31 @@ defmodule PDFInfo do
 
         [{key, string} | acc]
 
+      {key, "\\376\\377" <> rest}, acc ->
+        # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
+
+        [{key, fix_null_padded_utf16(rest)} | acc]
       {key, val}, acc ->
         [{key, val} | acc]
     end)
     |> Map.new()
   end
+
+  @doc false
+  @spec fix_null_padded_utf16(binary) :: binary
+  def fix_null_padded_utf16(binary) when is_binary(binary) do
+    string =
+      String.replace(binary, ~r{\\[0-3][0-7][0-7]}, fn "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> ->
+        code = (String.to_integer(d1) * 64) + (String.to_integer(d2) * 8) + (String.to_integer(d3) * 1)
+
+          <<code::utf8>>
+      end)
+
+    endianness = string |> determine_endianness(:big)
+
+    :unicode.characters_to_binary(string, {:utf16, endianness})
+  end
+
 
   @doc false
   def parse_metadata_object(string) when is_binary(string) do

@@ -261,4 +261,14 @@ defmodule PDFInfoTest do
              ]
            }
   end
+
+  test "Parses info object with null padded utf16 big endian" do
+    binary = """
+      2 0 obj
+      <</Producer(\\376\\377\\000P\\000D\\000F)
+      /Author(\\376\\377\\000j\\000s\\000e)>>endobj
+    """
+
+    assert PDFInfo.parse_info_object(binary) == %{"Author" => "jse", "Producer" => "PDF"}
+  end
 end
