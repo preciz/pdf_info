@@ -304,7 +304,11 @@ defmodule PDFInfo do
   @d1_digits Enum.map(0..3, &to_string/1)
   @d2_and_d3_digits Enum.map(0..7, &to_string/1)
 
-  def fix_null_padding("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> <> rest, acc) when d1 in @d1_digits and d2 in @d2_and_d3_digits and d3 in @d2_and_d3_digits do
+  def fix_null_padding(
+        "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> <> rest,
+        acc
+      )
+      when d1 in @d1_digits and d2 in @d2_and_d3_digits and d3 in @d2_and_d3_digits do
     code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
 
     fix_null_padding(rest, acc <> <<code::utf8>>)
