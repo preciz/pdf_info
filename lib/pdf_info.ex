@@ -150,6 +150,7 @@ defmodule PDFInfo do
     binary
     |> raw_metadata_objects()
     |> Enum.map(&parse_metadata_object/1)
+    |> Enum.reject(&Enum.empty?(&1))
   end
 
   @doc """
