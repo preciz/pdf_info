@@ -197,7 +197,8 @@ defmodule PDFInfo do
     )
     |> Enum.reduce([], fn
       {[{start_position, _}], [{end_position, _}]}, acc when start_position < end_position ->
-        raw_meta = binary_part(binary, start_position, end_position - start_position) <> "</x:xmpmeta>"
+        raw_meta =
+          binary_part(binary, start_position, end_position - start_position) <> "</x:xmpmeta>"
 
         [raw_meta | acc]
 
@@ -260,10 +261,13 @@ defmodule PDFInfo do
   @spec fix_null_padded_utf16(binary) :: binary
   def fix_null_padded_utf16(binary) when is_binary(binary) do
     string =
-      String.replace(binary, ~r{\\[0-3][0-7][0-7]}, fn "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> ->
-        code = (String.to_integer(d1) * 64) + (String.to_integer(d2) * 8) + (String.to_integer(d3) * 1)
+      String.replace(binary, ~r{\\[0-3][0-7][0-7]}, fn "\\" <>
+                                                         <<d1::bytes-size(1)>> <>
+                                                         <<d2::bytes-size(1)>> <>
+                                                         <<d3::bytes-size(1)>> ->
+        code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
 
-          <<code::utf8>>
+        <<code::utf8>>
       end)
 
     endianness = string |> determine_endianness(:big)
