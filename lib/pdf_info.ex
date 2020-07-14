@@ -260,19 +260,32 @@ defmodule PDFInfo do
   @doc false
   @spec fix_null_padded_utf16(binary) :: binary
   def fix_null_padded_utf16(binary) when is_binary(binary) do
-    string =
-      String.replace(binary, ~r{\\[0-3][0-7][0-7]}, fn "\\" <>
-                                                         <<d1::bytes-size(1)>> <>
-                                                         <<d2::bytes-size(1)>> <>
-                                                         <<d3::bytes-size(1)>> ->
-        code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
-
-        <<code::utf8>>
-      end)
+    string = fix_null_padding(binary)
 
     endianness = string |> determine_endianness(:big)
 
     :unicode.characters_to_binary(string, {:utf16, endianness})
+  end
+
+  def fix_null_padding(binary) do
+    fix_null_padding(binary, "")
+  end
+
+  def fix_null_padding(<<>>, acc) do
+    acc
+  end
+
+  @d1_digits Enum.map(0..3, &to_string/1)
+  @d2_and_d3_digits Enum.map(0..7, &to_string/1)
+
+  def fix_null_padding("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> <> rest, acc) when d1 in @d1_digits and d2 in @d2_and_d3_digits and d3 in @d2_and_d3_digits do
+    code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
+
+    fix_null_padding(rest, acc <> <<code::utf8>>)
+  end
+
+  def fix_null_padding(<<byte::bytes-size(1)>> <> rest, acc) do
+    fix_null_padding(rest, acc <> byte)
   end
 
   @doc false
