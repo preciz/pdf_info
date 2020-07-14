@@ -343,6 +343,7 @@ defmodule PDFInfo do
           val =
             val
             |> String.replace(~r{<[a-z]+:[a-z]+>}i, " ")
+            |> String.replace(~r{<[a-z]+:.+">}i, " ")
             |> String.replace(~r{</[a-z]+:[a-z]+>}i, " ")
             |> String.replace(~r{<[a-z]+:.+/>}i, " ")
             |> String.trim()
