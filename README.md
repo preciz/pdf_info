@@ -17,6 +17,37 @@ def deps do
 end
 ```
 
+## Usage
+
+```elixir
+iex(1)> pdf = File.read!("/Downloads/sample.pdf")
+<<37, 80, 68, 70, 45, ...>>
+iex(2)> PDFInfo.is_pdf?(pdf)
+true # looks like it's a PDF!
+iex(3)> PDFInfo.is_encrypted?(pdf)
+false # it's not encrypted (this lib can't decrypt, if it's encrypted then decrypt first)
+iex(4)> PDFInfo.info_objects(pdf)
+# a map with info objects
+%{"/Info 6 0 R" => [
+  %{
+  "Author" => "Barna Kovacs",
+  "CreationDate" => "D:20200212212756Z",
+  "Title" => "Can't come up with a title"
+  }
+]}
+iex(5)> PDFInfo.metadata_objects(pdf)
+# list of metadata maps
+[
+  %{
+    {"dc", "creator"} => "Barna Kovacs",
+    {"dc", "format"} => "application/pdf",
+    {"dc", "title"} => "Can't come up with a title",
+    ...
+  }
+]
+
+```
+
 ## Documentation
 
 Documentation can be be found at [https://hexdocs.pm/pdf_info](https://hexdocs.pm/pdf_info).
