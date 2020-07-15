@@ -36,7 +36,7 @@ iex(4)> PDFInfo.info_objects(pdf)
   }
 ]}
 iex(5)> PDFInfo.metadata_objects(pdf)
-# list of metadata maps
+# list of maps with metadata
 [
   %{
     {"dc", "creator"} => "Barna Kovacs",
