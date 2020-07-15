@@ -259,7 +259,12 @@ defmodule PDFInfo do
 
   def decode_value("\\376\\377" <> rest) do
     # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
-    {:ok, fix_null_padded_utf16(rest)}
+    rest
+    |> fix_octal_utf16()
+    |> case do
+      string when is_binary(string) -> {:ok, string}
+      error -> {:error, error}
+    end
   end
 
   def decode_value(val) do
@@ -280,16 +285,6 @@ defmodule PDFInfo do
   end
 
   @doc false
-  @spec fix_null_padded_utf16(binary) :: binary
-  def fix_null_padded_utf16(binary) when is_binary(binary) do
-    string = fix_null_padding(binary)
-
-    endianness = string |> determine_endianness(:big)
-
-    :unicode.characters_to_binary(string, {:utf16, endianness})
-  end
-
-  @doc false
   def utf16_size_fix(binary) do
     case rem(byte_size(binary), 2) do
       0 -> binary
@@ -298,29 +293,24 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def fix_null_padding(binary) do
-    fix_null_padding(binary, "")
+  def fix_octal_utf16(binary) when is_binary(binary) do
+    String.split(binary, ~r{\\[0-3][0-7][0-7]}, include_captures: true, trim: true)
+    |> Enum.map(&do_fix_octal_utf16/1)
+    |> Enum.chunk_every(2)
+    |> Enum.map(fn
+      [left_byte, right_byte] -> <<left_byte, right_byte>>
+      _ -> <<>>
+    end)
+    |> Enum.join()
+    |> :unicode.characters_to_binary({:utf16, :big})
   end
 
-  def fix_null_padding(<<>>, acc) do
-    acc
+  def do_fix_octal_utf16("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) do
+    String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
   end
 
-  @d1_digits Enum.map(0..3, &to_string/1)
-  @d2_and_d3_digits Enum.map(0..7, &to_string/1)
-
-  def fix_null_padding(
-        "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>> <> rest,
-        acc
-      )
-      when d1 in @d1_digits and d2 in @d2_and_d3_digits and d3 in @d2_and_d3_digits do
-    code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
-
-    fix_null_padding(rest, acc <> <<code::utf8>>)
-  end
-
-  def fix_null_padding(<<byte::bytes-size(1)>> <> rest, acc) do
-    fix_null_padding(rest, acc <> byte)
+  def do_fix_octal_utf16(<<code::utf8>>) do
+    code
   end
 
   @doc false

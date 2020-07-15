@@ -270,6 +270,21 @@ defmodule PDFInfoTest do
     """
 
     assert PDFInfo.parse_info_object(binary) == %{"Author" => "jse", "Producer" => "PDF"}
+
+    binary2 = """
+      \n6 0 obj\n<</Producer(\\376\\377\\000P\\000D\\000F\\000C\\000r\\000e\\000a\\000t\\000o\\000r\\000 \\0002\\000.\\0004\\000.\\0001\\000.\\0001\\0003)\n/CreationDate(D:20190409143940+02'00')\n/ModDate(D:20190409143940+02'00')\n/Title(\\376\\377\\000A\\000n\\000t\\000r\\000a\\000g\\000s\\000f\\000o\\000r\\000m\\000u\\000l\\000a\\000r\\000,\\000 \\000V\\000e\\000r\\000f\\000\\374\\000l\\000l\\000u\\000n\\000g)\n/Author(\\376\\377\\000b\\000k)\n/Subject(\\376\\377)\n/Keywords(\\376\\377)\n/Creator(\\376\\377\\000P\\000D\\000F\\000C\\000r\\000e\\000a\\000t\\000o\\000r\\000 \\0002\\000.\\0004\\000.\\0001\\000.\\0001\\0003)>>endobj
+    """
+
+    assert PDFInfo.parse_info_object(binary2) == %{
+             "Author" => "bk",
+             "Producer" => "PDFCreator 2.4.1.13",
+             "CreationDate" => "D:20190409143940+02'00'",
+             "Creator" => "PDFCreator 2.4.1.13",
+             "Keywords" => "",
+             "ModDate" => "D:20190409143940+02'00'",
+             "Subject" => "",
+             "Title" => "Antragsformular, Verfüllung"
+           }
   end
 
   test "Corrects encoding issue" do
