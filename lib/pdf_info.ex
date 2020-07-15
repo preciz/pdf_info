@@ -210,69 +210,73 @@ defmodule PDFInfo do
 
   @doc false
   def parse_info_object(string) when is_binary(string) do
-    strings =
-      Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
-      |> Enum.map(fn
-        [_, key, val] -> {key, val}
-      end)
+    strings = Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
 
-    hex =
-      Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
-      |> Enum.map(fn
-        [_, key, val] -> {key, val}
-      end)
+    hex = Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
 
     Enum.concat(strings, hex)
     |> Enum.reduce([], fn
-      {key, "feff" <> base_16_encoded_utf16_big_endian}, acc ->
-        base_16_encoded_utf16_big_endian
-        |> String.replace(~r{[^0-9a-f]}, "")
-        |> Base.decode16(case: :lower)
-        |> case do
-          {:ok, utf16} ->
-            endianness = determine_endianness(utf16, :big)
-
-            utf16 = utf16_size_fix(utf16)
-
-            string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
-
-            [{key, string} | acc]
+      [_, key, val], acc ->
+        case decode_value(val) do
+          {:ok, val} ->
+            [{key, val} | acc]
 
           :error ->
             acc
         end
+    end)
+    |> Enum.map(fn {key, val} ->
+      {key, fix_non_printable(val)}
+    end)
+    |> Map.new()
+  end
 
-      {key, <<254, 255>> <> utf16}, acc ->
+  def decode_value("feff" <> base_16_encoded_utf16_big_endian) do
+    base_16_encoded_utf16_big_endian
+    |> String.replace(~r{[^0-9a-f]}, "")
+    |> Base.decode16(case: :lower)
+    |> case do
+      {:ok, utf16} ->
         endianness = determine_endianness(utf16, :big)
 
         utf16 = utf16_size_fix(utf16)
 
-        string = :unicode.characters_to_binary(utf16, {:utf16, endianness})
+        {:ok, :unicode.characters_to_binary(utf16, {:utf16, endianness})}
 
-        [{key, string} | acc]
+      :error ->
+        :error
+    end
+  end
 
-      {key, "\\376\\377" <> rest}, acc ->
-        # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
+  @doc false
+  def decode_value(<<254, 255>> <> utf16) do
+    endianness = determine_endianness(utf16, :big)
 
-        [{key, fix_null_padded_utf16(rest)} | acc]
+    utf16 = utf16_size_fix(utf16)
 
-      {key, val}, acc ->
-        [{key, val} | acc]
-    end)
-    |> Enum.map(fn {key, val} ->
-      {
-        key,
-        case String.printable?(val) do
-          false ->
-            # Fix for non printable binary like <<252>> = ü
-            val |> :binary.bin_to_list() |> :unicode.characters_to_binary()
+    {:ok, :unicode.characters_to_binary(utf16, {:utf16, endianness})}
+  end
 
-          true ->
-            val
-        end
-      }
-    end)
-    |> Map.new()
+  def decode_value("\\376\\377" <> rest) do
+    # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
+    {:ok, fix_null_padded_utf16(rest)}
+  end
+
+  def decode_value(val) do
+    {:ok, val}
+  end
+
+  # for info object only
+  @doc false
+  def fix_non_printable(val) when is_binary(val) do
+    case String.printable?(val) do
+      false ->
+        # Fix for non printable binary like <<252>> = ü
+        val |> :binary.bin_to_list() |> :unicode.characters_to_binary()
+
+      true ->
+        val
+    end
   end
 
   @doc false
@@ -349,7 +353,13 @@ defmodule PDFInfo do
             |> String.replace(~r{<[a-z]+:.+/>}i, " ")
             |> String.trim()
 
-          Map.put(acc, {type, key}, val)
+          case decode_value(val) do
+            {:ok, val} ->
+              Map.put(acc, {type, key}, val)
+
+            :error ->
+              acc
+          end
 
         _, acc ->
           acc
