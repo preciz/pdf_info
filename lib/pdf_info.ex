@@ -305,6 +305,7 @@ defmodule PDFInfo do
     |> :unicode.characters_to_binary({:utf16, :big})
   end
 
+  @doc false
   def do_fix_octal_utf16("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) do
     String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
   end
