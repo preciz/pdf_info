@@ -303,4 +303,11 @@ defmodule PDFInfoTest do
 
     assert %{"Creator" => " ® ü "} = PDFInfo.parse_info_object(binary)
   end
+
+  test "Parsing /Info fixes octal when leading \\( and trailing \\) is present" do
+    binary =
+      "\n2 0 obj\n<</Producer(GPL Ghostscript 9.04)\n/CreationDate(D:20151021104825+02'00')\n/ModDate(D:20151021104825+02'00')\n/Title(\\376\\377\\000\\(\\000W\\000o\\000h\\000n\\000u\\000n\\000g\\000s\\000g\\000e\\000b\\000e\\000r\\000b\\000e\\000s\\000t\\000\\344\\000t\\000i\\000g\\000u\\000n\\000g\\000 \\000-\\000 \\000Z\\000u\\000s\\000a\\000t\\000z\\000b\\000l\\000a\\000t\\000t\\000\\))\n/Subject()>>endobj"
+
+    assert %{"Title" => "Wohnungsgeberbestätigung - Zusatzblatt"} = PDFInfo.parse_info_object(binary)
+  end
 end
