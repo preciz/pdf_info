@@ -1,7 +1,7 @@
 defmodule PDFInfo.MixProject do
   use Mix.Project
 
-  @version "0.1.6"
+  @version "0.1.7"
   @github "https://github.com/preciz/pdf_info"
 
   def project do
