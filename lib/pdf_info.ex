@@ -215,17 +215,38 @@ defmodule PDFInfo do
   @doc false
   def parse_info_object(string, pdf_binary \\ "")
       when is_binary(string) and is_binary(pdf_binary) do
-    strings = Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
+    strings =
+      Regex.scan(~r{/([a-zA-Z]+)\s*\((.*?)\)}, string)
+      |> Enum.reduce([], fn [_, key, val], acc ->
+        case decode_value(val) do
+          {:ok, decoded_value} ->
+            [{key, decoded_value} | acc]
 
-    hex = Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
+          :error ->
+            acc
+        end
+      end)
+
+    hex =
+      Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
+      |> Enum.reduce([], fn [_, key, val], acc ->
+        case decode_value(val, true) do
+          {:ok, decoded_value} ->
+            [{key, decoded_value} | acc]
+
+          :error ->
+            acc
+        end
+      end)
 
     objects =
       Regex.scan(~r{[/]([a-z]+)\s([0-9]+\s[0-9]+)\s.*?R}i, string)
       |> Enum.reduce([], fn
         [_, key, obj_id], acc ->
           with [[obj]] <- get_object(pdf_binary, obj_id),
-               [_, val] <- Regex.run(~r{obj.*?\((.*?)\).*?endobj}s, obj) do
-            [[nil, key, val] | acc]
+               [_, val] <- Regex.run(~r{obj.*?\((.*?)\).*?endobj}s, obj),
+               {:ok, decoded_value} <- decode_value(val) do
+            [{key, decoded_value} | acc]
           else
             _ -> acc
           end
@@ -235,23 +256,15 @@ defmodule PDFInfo do
       end)
 
     (strings ++ hex ++ objects)
-    |> Enum.reduce([], fn
-      [_, key, val], acc ->
-        case decode_value(val) do
-          {:ok, val} ->
-            [{key, val} | acc]
-
-          :error ->
-            acc
-        end
-    end)
     |> Enum.map(fn {key, val} ->
       {key, val |> fix_non_printable() |> fix_octals()}
     end)
     |> Map.new()
   end
 
-  def decode_value("feff" <> base_16_encoded_utf16_big_endian) do
+  def decode_value(value, hex \\ false)
+
+  def decode_value("feff" <> base_16_encoded_utf16_big_endian, _) do
     base_16_encoded_utf16_big_endian
     |> String.replace(~r{[^0-9a-f]}, "")
     |> Base.decode16(case: :lower)
@@ -269,7 +282,7 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def decode_value(<<254, 255>> <> utf16) do
+  def decode_value(<<254, 255>> <> utf16, _) do
     endianness = determine_endianness(utf16, :big)
 
     utf16 = utf16_size_fix(utf16)
@@ -277,7 +290,7 @@ defmodule PDFInfo do
     {:ok, :unicode.characters_to_binary(utf16, {:utf16, endianness})}
   end
 
-  def decode_value("\\376\\377" <> rest) do
+  def decode_value("\\376\\377" <> rest, _) do
     # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
     rest
     |> String.replace("\\000\\(", "")
@@ -289,7 +302,14 @@ defmodule PDFInfo do
     end
   end
 
-  def decode_value(val) do
+  def decode_value(val, true) do
+    val
+    |> String.downcase()
+    |> String.replace(~r{[^0-9a-f]}, "")
+    |> Base.decode16(case: :lower)
+  end
+
+  def decode_value(val, false) do
     {:ok, val}
   end
 

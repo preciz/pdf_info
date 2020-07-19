@@ -146,6 +146,20 @@ defmodule PDFInfoTest do
                }
              ]
            }
+
+    binary =
+      "\r5 0 obj\r<<\r/CreationDate (D:20180511175759+02'00')\r/Creator (Adobe InDesign CS6 \\(Macintosh\\))\r/ModDate (D:20181130123617)\r/Producer (Adobe PDF Library 10.0.1)\r/Trapped /False\r/Author (Project AG)\r/Keywords <417263686974656b747572707265697320323031380a456e67657265205761686c0a4d45494e2054\r484f4e2c204d616d4f626a656b74>\r/Subject <456e67657265205761686c0a4d45494e2054484f4e>\r/Title (Plakat)\r>>\rendobj"
+
+    assert PDFInfo.parse_info_object(binary) == %{
+             "Title" => "Plakat",
+             "Author" => "Project AG",
+             "CreationDate" => "D:20180511175759+02'00'",
+             "Creator" => "Adobe InDesign CS6 \\(Macintosh\\",
+             "Keywords" => "Architekturpreis 2018\nEngere Wahl\nMEIN THON, MamObjekt",
+             "ModDate" => "D:20181130123617",
+             "Producer" => "Adobe PDF Library 10.0.1",
+             "Subject" => "Engere Wahl\nMEIN THON"
+           }
   end
 
   test "Extracts raw /Metadata object" do
