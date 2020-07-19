@@ -260,10 +260,8 @@ defmodule PDFInfo do
   def decode_value("\\376\\377" <> rest) do
     # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
     rest
-    |> case do
-      "\\000\\(" <> rest -> rest |> String.trim_trailing("\\")
-      other -> other
-    end
+    |> String.replace("\\000\\(", "")
+    |> String.trim_trailing("\\")
     |> fix_octal_utf16()
     |> case do
       string when is_binary(string) -> {:ok, string}
