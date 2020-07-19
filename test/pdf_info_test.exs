@@ -178,7 +178,7 @@ defmodule PDFInfoTest do
              "Producer" => "QuarkXPress\\(R\\",
              "Title" => "20Seiten",
              "XPressPrivate" =>
-               "%%DocumentProcessColors: Cyan Magenta Yellow Black\\012%%EndComments"
+               "%%DocumentProcessColors: Cyan Magenta Yellow Black\n%%EndComments"
            }
   end
 
@@ -287,12 +287,20 @@ defmodule PDFInfoTest do
            }
   end
 
-  test "Corrects encoding issue" do
+  test "Parsing /Info Corrects encoding issue" do
     binary =
       <<13, 54, 56, 32, 48, 32, 111, 98, 106, 13, 60, 60, 47, 65, 117, 116, 104, 111, 114, 40, 83,
         116, 97, 100, 116, 32, 78, 252, 114, 110, 98, 101, 114, 103, 41, 47, 67, 114, 101, 97,
         116, 105, 111, 110, 68, 97, 116, 101, 40, 68>>
 
     assert PDFInfo.parse_info_object(binary) == %{"Author" => "Stadt Nürnberg"}
+  end
+
+  test "Parsing /Info Transforms octals" do
+    binary = """
+    \n2 0 obj\n<</Creator( \\256 \\374 )>>endobj
+    """
+
+    assert %{"Creator" => " ® ü "} = PDFInfo.parse_info_object(binary)
   end
 end

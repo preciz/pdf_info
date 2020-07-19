@@ -226,7 +226,7 @@ defmodule PDFInfo do
         end
     end)
     |> Enum.map(fn {key, val} ->
-      {key, fix_non_printable(val)}
+      {key, val |> fix_non_printable() |> fix_octals()}
     end)
     |> Map.new()
   end
@@ -312,6 +312,24 @@ defmodule PDFInfo do
 
   def do_fix_octal_utf16(<<code::utf8>>) do
     code
+  end
+
+  @doc false
+  def fix_octals(binary) when is_binary(binary) do
+    String.split(binary, ~r{\\[0-3][0-7][0-7]}, include_captures: true)
+    |> Enum.map(&do_fix_octal/1)
+    |> Enum.join()
+  end
+
+  @doc false
+  def do_fix_octal("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) do
+    code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
+
+    <<code::utf8>>
+  end
+
+  def do_fix_octal(binary) do
+    binary
   end
 
   @doc false
