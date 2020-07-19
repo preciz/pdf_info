@@ -305,8 +305,11 @@ defmodule PDFInfo do
     |> :unicode.characters_to_binary({:utf16, :big})
   end
 
+  @octal_first_digit 0..3 |> Enum.map(&to_string/1)
+  @octal_rest_digits 0..7 |> Enum.map(&to_string/1)
+
   @doc false
-  def do_fix_octal_utf16("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) do
+  def do_fix_octal_utf16("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
     String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
   end
 
@@ -322,7 +325,7 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def do_fix_octal("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) do
+  def do_fix_octal("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
     code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
 
     <<code::utf8>>
