@@ -120,7 +120,11 @@ defmodule PDFInfo do
     binary
     |> raw_info_objects()
     |> Enum.reduce(%{}, fn {info_ref, list}, acc ->
-      Map.put(acc, info_ref, Enum.map(list, &parse_info_object/1))
+      Map.put(
+        acc,
+        info_ref,
+        Enum.map(list, fn raw_info_obj -> parse_info_object(raw_info_obj, binary) end)
+      )
     end)
   end
 
@@ -209,12 +213,28 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def parse_info_object(string) when is_binary(string) do
+  def parse_info_object(string, pdf_binary \\ "")
+      when is_binary(string) and is_binary(pdf_binary) do
     strings = Regex.scan(~r{/(.*?)\s*\((.*?)\)}, string)
 
     hex = Regex.scan(~r{/([^ /]+)\s*<(.*?)>}s, string)
 
-    Enum.concat(strings, hex)
+    objects =
+      Regex.scan(~r{[/]([a-z]+)\s([0-9]+\s[0-9]+)\s.*?R}i, string)
+      |> Enum.reduce([], fn
+        [_, key, obj_id], acc ->
+          with [[obj]] <- get_object(pdf_binary, obj_id),
+               [_, val] <- Regex.run(~r{obj.*?\((.*?)\).*?endobj}s, obj) do
+            [[nil, key, val] | acc]
+          else
+            _ -> acc
+          end
+
+        _, acc ->
+          acc
+      end)
+
+    (strings ++ hex ++ objects)
     |> Enum.reduce([], fn
       [_, key, val], acc ->
         case decode_value(val) do
@@ -311,7 +331,10 @@ defmodule PDFInfo do
   @octal_rest_digits 0..7 |> Enum.map(&to_string/1)
 
   @doc false
-  def do_fix_octal_utf16("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
+  def do_fix_octal_utf16(
+        "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>
+      )
+      when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
     String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
   end
 
@@ -327,7 +350,10 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def do_fix_octal("\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>) when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
+  def do_fix_octal(
+        "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>
+      )
+      when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
     code = String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
 
     <<code::utf8>>

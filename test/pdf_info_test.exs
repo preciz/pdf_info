@@ -308,6 +308,19 @@ defmodule PDFInfoTest do
     binary =
       "\n2 0 obj\n<</Producer(GPL Ghostscript 9.04)\n/CreationDate(D:20151021104825+02'00')\n/ModDate(D:20151021104825+02'00')\n/Title(\\376\\377\\000\\(\\000W\\000o\\000h\\000n\\000u\\000n\\000g\\000s\\000g\\000e\\000b\\000e\\000r\\000b\\000e\\000s\\000t\\000\\344\\000t\\000i\\000g\\000u\\000n\\000g\\000 \\000-\\000 \\000Z\\000u\\000s\\000a\\000t\\000z\\000b\\000l\\000a\\000t\\000t\\000\\))\n/Subject()>>endobj"
 
-    assert %{"Title" => "Wohnungsgeberbestätigung - Zusatzblatt"} = PDFInfo.parse_info_object(binary)
+    assert %{"Title" => "Wohnungsgeberbestätigung - Zusatzblatt"} =
+             PDFInfo.parse_info_object(binary)
+  end
+
+  test "Parses /Info object with object references to values" do
+    pdf = """
+    \n721 0 obj\n(I was referenced)\nendobj
+    """
+
+    raw_info_obj = """
+    \n1 0 obj\n<< /Title 721 0 R /Author 723 0 R /Subject 724 0 R /Producer 722 0 R /Creator\n725 0 R /CreationDate 726 0 R /ModDate 726 0 R /Keywords 727 0 R /AAPL:Keywords\n728 0 R >>\nendobj
+    """
+
+    assert PDFInfo.parse_info_object(raw_info_obj, pdf) == %{"Title" => "I was referenced"}
   end
 end
