@@ -309,7 +309,7 @@ defmodule PDFInfo do
     |> fix_octal_utf16()
     |> case do
       string when is_binary(string) -> {:ok, string}
-      error -> {:error, error}
+      _error -> :error
     end
   end
 
