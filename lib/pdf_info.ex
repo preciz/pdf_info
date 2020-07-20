@@ -216,7 +216,7 @@ defmodule PDFInfo do
   def parse_info_object(string, pdf_binary \\ "")
       when is_binary(string) and is_binary(pdf_binary) do
     strings =
-      Regex.scan(~r{/([a-zA-Z]+)\s*\((.*?)\)}, string)
+      Regex.scan(~r{/([a-zA-Z]+)\s*\((.*?[\)]*)\)}, string)
       |> Enum.reduce([], fn [_, key, val], acc ->
         case decode_value(val) do
           {:ok, decoded_value} ->
@@ -284,8 +284,6 @@ defmodule PDFInfo do
   @doc false
   def decode_value(<<254, 255>> <> "\\" <> utf16_octal, _) do
     ("\\" <> utf16_octal)
-    |> String.replace("\\000\\(", "")
-    |> String.trim_trailing("\\")
     |> fix_octal_utf16()
     |> case do
       string when is_binary(string) -> {:ok, string}
@@ -304,8 +302,6 @@ defmodule PDFInfo do
   def decode_value("\\376\\377" <> rest, _) do
     # Fix metadata: https://github.com/mozilla/pdf.js/pull/1598/files#diff-7f3b58adf9e7b7e802f63cc9b3855506R7
     rest
-    |> String.replace("\\000\\(", "")
-    |> String.trim_trailing("\\")
     |> fix_octal_utf16()
     |> case do
       string when is_binary(string) -> {:ok, string}
@@ -367,6 +363,10 @@ defmodule PDFInfo do
       )
       when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
     String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
+  end
+
+  def do_fix_octal_utf16("\\" <> <<code>>) do
+    code
   end
 
   def do_fix_octal_utf16(<<code>>) do

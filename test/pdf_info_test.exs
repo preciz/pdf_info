@@ -137,7 +137,7 @@ defmodule PDFInfoTest do
                %{
                  "Author" => "Stadt Nürnberg / Presse- und Informationsamt",
                  "CreationDate" => "D:20191125152027+01'00'",
-                 "Creator" => "Adobe InDesign CC 13.1 \\(Macintosh\\",
+                 "Creator" => "Adobe InDesign CC 13.1 \\(Macintosh\\)",
                  "Keywords" => "nürnberg heute 107, made in nürnberg, MamObjekt",
                  "ModDate" => "D:20191202125216",
                  "Producer" => "Adobe PDF Library 15.0",
@@ -154,7 +154,7 @@ defmodule PDFInfoTest do
              "Title" => "Plakat",
              "Author" => "Project AG",
              "CreationDate" => "D:20180511175759+02'00'",
-             "Creator" => "Adobe InDesign CS6 \\(Macintosh\\",
+             "Creator" => "Adobe InDesign CS6 \\(Macintosh\\)",
              "Keywords" => "Architekturpreis 2018\nEngere Wahl\nMEIN THON, MamObjekt",
              "ModDate" => "D:20181130123617",
              "Producer" => "Adobe PDF Library 10.0.1",
@@ -322,7 +322,7 @@ defmodule PDFInfoTest do
     binary =
       "\n2 0 obj\n<</Producer(GPL Ghostscript 9.04)\n/CreationDate(D:20151021104825+02'00')\n/ModDate(D:20151021104825+02'00')\n/Title(\\376\\377\\000\\(\\000W\\000o\\000h\\000n\\000u\\000n\\000g\\000s\\000g\\000e\\000b\\000e\\000r\\000b\\000e\\000s\\000t\\000\\344\\000t\\000i\\000g\\000u\\000n\\000g\\000 \\000-\\000 \\000Z\\000u\\000s\\000a\\000t\\000z\\000b\\000l\\000a\\000t\\000t\\000\\))\n/Subject()>>endobj"
 
-    assert %{"Title" => "Wohnungsgeberbestätigung - Zusatzblatt"} =
+    assert %{"Title" => "(Wohnungsgeberbestätigung - Zusatzblatt)"} =
              PDFInfo.parse_info_object(binary)
   end
 
