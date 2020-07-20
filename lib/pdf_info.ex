@@ -282,6 +282,17 @@ defmodule PDFInfo do
   end
 
   @doc false
+  def decode_value(<<254, 255>> <> "\\" <> utf16_octal, _) do
+    ("\\" <> utf16_octal)
+    |> String.replace("\\000\\(", "")
+    |> String.trim_trailing("\\")
+    |> fix_octal_utf16()
+    |> case do
+      string when is_binary(string) -> {:ok, string}
+      _error -> :error
+    end
+  end
+
   def decode_value(<<254, 255>> <> utf16, _) do
     endianness = determine_endianness(utf16, :big)
 
@@ -358,7 +369,7 @@ defmodule PDFInfo do
     String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
   end
 
-  def do_fix_octal_utf16(<<code::utf8>>) do
+  def do_fix_octal_utf16(<<code>>) do
     code
   end
 
