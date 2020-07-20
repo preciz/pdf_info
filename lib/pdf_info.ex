@@ -344,7 +344,7 @@ defmodule PDFInfo do
   @doc false
   def fix_octal_utf16(binary) when is_binary(binary) do
     String.split(binary, ~r{\\[0-3][0-7][0-7]}, include_captures: true, trim: true)
-    |> Enum.map(&do_fix_octal_utf16/1)
+    |> Enum.flat_map(&do_fix_octal_utf16/1)
     |> Enum.chunk_every(2)
     |> Enum.map(fn
       [left_byte, right_byte] -> <<left_byte, right_byte>>
@@ -362,15 +362,19 @@ defmodule PDFInfo do
         "\\" <> <<d1::bytes-size(1)>> <> <<d2::bytes-size(1)>> <> <<d3::bytes-size(1)>>
       )
       when d1 in @octal_first_digit and d2 in @octal_rest_digits and d3 in @octal_rest_digits do
-    String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1
+    [String.to_integer(d1) * 64 + String.to_integer(d2) * 8 + String.to_integer(d3) * 1]
   end
 
   def do_fix_octal_utf16("\\" <> <<code>>) do
-    code
+    [code]
   end
 
   def do_fix_octal_utf16(<<code>>) do
-    code
+    [code]
+  end
+
+  def do_fix_octal_utf16(string) when is_binary(string) do
+    String.to_charlist(string)
   end
 
   @doc false
