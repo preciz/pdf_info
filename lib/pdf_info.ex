@@ -279,7 +279,13 @@ defmodule PDFInfo do
 
         utf16 = utf16_size_fix(utf16)
 
-        {:ok, :unicode.characters_to_binary(utf16, {:utf16, endianness})}
+        string =
+          case :unicode.characters_to_binary(utf16, {:utf16, endianness}) do
+            string when is_binary(string) -> string
+            {:error, string, _} -> string
+          end
+
+        {:ok, string}
 
       :error ->
         :error
@@ -301,7 +307,13 @@ defmodule PDFInfo do
 
     utf16 = utf16_size_fix(utf16)
 
-    {:ok, :unicode.characters_to_binary(utf16, {:utf16, endianness})}
+    string =
+      case :unicode.characters_to_binary(utf16, {:utf16, endianness}) do
+        string when is_binary(string) -> string
+        {:error, string, _} -> string
+      end
+
+    {:ok, string}
   end
 
   def decode_value("\\376\\377" <> rest, _) do
