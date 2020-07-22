@@ -158,8 +158,14 @@ defmodule PDFInfo do
   def metadata_objects(binary) when is_binary(binary) do
     binary
     |> raw_metadata_objects()
-    |> Enum.map(&parse_metadata_object/1)
-    |> Enum.reject(&Enum.empty?(&1))
+    |> Enum.reduce([], fn raw_metadata, acc ->
+      with map when is_map(map) <- parse_metadata_object(raw_metadata),
+           false <- Enum.empty?(map) do
+        [map | acc]
+      else
+        _ -> acc
+      end
+    end)
   end
 
   @doc """
@@ -419,7 +425,7 @@ defmodule PDFInfo do
 
   @doc false
   def parse_metadata_object(string) when is_binary(string) do
-    with [xmp] <- Regex.run(~r{<x:xmpmeta.*?</x:xmpmeta}sm, string) do
+    with [xmp] <- Regex.run(~r{<x:xmpmeta.*</x:xmpmeta}sm, string) do
       ["dc", "pdf", "pdfx", "xap", "xapMM", "xmp", "xmpMM"]
       |> Enum.reduce(%{}, fn tag, acc ->
         list = Regex.scan(~r{<#{tag}:(.*?)>(.*?)</#{tag}:(.*?)>}sm, xmp)
