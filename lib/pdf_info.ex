@@ -1,7 +1,12 @@
 defmodule PDFInfo do
   @moduledoc """
   Extracts all /Info and /Metadata objects from a PDF binary using Regex
-  and without any external dependencies.
+  and without any dependencies.
+
+  Limitations:
+  If the PDF is encrypted or the metadata is compressed you have to first decrypt and uncompress:
+
+  `qpdf --stream-data=uncompress --compress-streams=n --decrypt --password='' myfile.pdf myfile_out.pdf`
   """
 
   @doc """
