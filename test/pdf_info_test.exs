@@ -137,7 +137,7 @@ defmodule PDFInfoTest do
                %{
                  "Author" => "Stadt Nürnberg / Presse- und Informationsamt",
                  "CreationDate" => "D:20191125152027+01'00'",
-                 "Creator" => "Adobe InDesign CC 13.1 \\(Macintosh\\)",
+                 "Creator" => "Adobe InDesign CC 13.1 (Macintosh)",
                  "Keywords" => "nürnberg heute 107, made in nürnberg, MamObjekt",
                  "ModDate" => "D:20191202125216",
                  "Producer" => "Adobe PDF Library 15.0",
@@ -154,7 +154,7 @@ defmodule PDFInfoTest do
              "Title" => "Plakat",
              "Author" => "Project AG",
              "CreationDate" => "D:20180511175759+02'00'",
-             "Creator" => "Adobe InDesign CS6 \\(Macintosh\\)",
+             "Creator" => "Adobe InDesign CS6 (Macintosh)",
              "Keywords" => "Architekturpreis 2018\nEngere Wahl\nMEIN THON, MamObjekt",
              "ModDate" => "D:20181130123617",
              "Producer" => "Adobe PDF Library 10.0.1",
@@ -187,9 +187,9 @@ defmodule PDFInfoTest do
     assert PDFInfo.parse_info_object(binary) == %{
              "Author" => "Andreas Hönig",
              "CreationDate" => "D:20190423144349+01'00'",
-             "Creator" => "QuarkXPress\\(R\\",
+             "Creator" => "QuarkXPress(R) 14.01",
              "ModDate" => "D:20190423144349+01'00'",
-             "Producer" => "QuarkXPress\\(R\\",
+             "Producer" => "QuarkXPress(R) 14.01",
              "Title" => "20Seiten",
              "XPressPrivate" =>
                "%%DocumentProcessColors: Cyan Magenta Yellow Black\n%%EndComments"
@@ -365,7 +365,7 @@ defmodule PDFInfoTest do
              "CreationDate" => "D:20200612075435Z00'00'",
              "Creator" => "Word",
              "ModDate" => "D:20200612075435Z00'00'",
-             "Producer" => "macOS Version 10.15.5 \\(Build 19F96\\",
+             "Producer" => "macOS Version 10.15.5 (Build 19F96) Quartz PDFContext",
              "Title" => "Microsoft Word - AnmeldungFußballcampOkt20.doc"
            }
   end

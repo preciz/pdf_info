@@ -221,7 +221,7 @@ defmodule PDFInfo do
   def parse_info_object(string, pdf_binary \\ "")
       when is_binary(string) and is_binary(pdf_binary) do
     strings =
-      Regex.scan(~r{/([a-zA-Z]+)\s*\((.*?[\)]*)\)}, string)
+      Regex.scan(~r{/([a-zA-Z]+)\s*\((.*?[\)]*[^\\])\)}, string)
       |> Enum.reduce([], fn [_, key, val], acc ->
         case decode_value(val) do
           {:ok, decoded_value} ->
@@ -399,6 +399,8 @@ defmodule PDFInfo do
     String.split(binary, ~r{\\[0-3][0-7][0-7]}, include_captures: true)
     |> Enum.map(&do_fix_octal/1)
     |> Enum.join()
+    |> String.replace("\\)", ")")
+    |> String.replace("\\(", "(")
   end
 
   @doc false
