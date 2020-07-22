@@ -374,6 +374,8 @@ defmodule PDFInfoTest do
     raw_info_obj =
       "\n2 0 obj\n<</Title(\\376\\377\\000e\\000n\\000e\\000r\\000g\\000e\\000t\\000i\\000s\\000c\\000h\\000e\\000 \\000s\\000t\\000a\\000n\\000d\\000a\\000r\\000d\\000s\\000 \\000u\\000n\\000d\\000 \\000p\\000l\\000a\\000n\\000u\\000n\\000g\\000s\\000v\\000o\\000r\\000g\\000a\\000b\\000e\\000n\\000 \\0001\\0001\\000_\\0002\\0000\\0000\\0009\\000 \\000d\\000r\\000u\\000c\\000k\\000f &)>>endobj"
 
-    assert PDFInfo.parse_info_object(raw_info_obj) == %{"Title" => "energetische standards und planungsvorgaben 11_2009 druckf…"}
+    assert PDFInfo.parse_info_object(raw_info_obj) == %{
+             "Title" => "energetische standards und planungsvorgaben 11_2009 druckf…"
+           }
   end
 end
