@@ -12,16 +12,24 @@ defmodule PDFInfo do
   @doc """
   Checks if the binary starts with the PDF header.
 
+  The PDF header can be anywhere in the first 1024 bytes.
+
   Returns `true` if the binary starts with the PDF header.
   Returns `false` otherwise.
   """
   @spec is_pdf?(binary) :: boolean
   def is_pdf?(<<"%PDF">> <> _), do: true
 
-  def is_pdf?(_), do: false
+  def is_pdf?(binary) when is_binary(binary) do
+    binary
+    |> binary_part(0, min(1024, byte_size(binary)))
+    |> String.contains?("%PDF")
+  end
 
   @doc """
   Extracts PDF version from the PDF header.
+
+  The PDF header can be anywhere in the first 1024 bytes.
 
   Returns `{:ok, version}` if the PDF header is correct.
   Returns `:error` if the PDF header is incorrect.
@@ -39,8 +47,14 @@ defmodule PDFInfo do
     {:ok, version}
   end
 
-  def pdf_version(_) do
-    :error
+  def pdf_version(binary) when is_binary(binary) do
+    head = binary_part(binary, 0, min(1024, byte_size(binary)))
+
+    Regex.run(~r{%PDF-[0-9]\.[0-9]}, head)
+    |> case do
+      [match] -> pdf_version(match)
+      _ -> :error
+    end
   end
 
   @doc """

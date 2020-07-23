@@ -76,9 +76,25 @@ defmodule PDFInfoTest do
     refute PDFInfo.is_pdf?("not a pdf")
   end
 
+  test "Recognizes PDF header in first 1024 bytes (junk header)" do
+    binary = "<span>Download gestartet...</span><body onload='window.close();'></body>%PDF-1.5
+    %âãÏÓ
+    3 0 obj"
+
+    assert PDFInfo.is_pdf?(binary)
+  end
+
   test "Parses PDF version" do
     assert PDFInfo.pdf_version("%PDF-1.5\nrandomNoise...") == {:ok, "1.5"}
     assert PDFInfo.pdf_version("not a pdf") == :error
+  end
+
+  test "Parses PDF version from first 1024 bytes (junk header)" do
+    binary = "<span>Download gestartet...</span><body onload='window.close();'></body>%PDF-1.5
+    %âãÏÓ
+    3 0 obj"
+
+    assert PDFInfo.pdf_version(binary) == {:ok, "1.5"}
   end
 
   test "Finds /Encrypt ref" do
