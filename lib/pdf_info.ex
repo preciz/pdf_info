@@ -482,7 +482,8 @@ defmodule PDFInfo do
   end
 
   @doc false
-  def get_object(binary, obj_id) when is_binary(binary) and is_binary(obj_id) and byte_size(obj_id) <= 15 do
+  def get_object(binary, obj_id)
+      when is_binary(binary) and is_binary(obj_id) and byte_size(obj_id) <= 15 do
     obj_id = String.replace(obj_id, " ", "\s")
 
     ~r{[^0-9]#{obj_id}.obj(?s).*?endobj}
