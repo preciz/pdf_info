@@ -154,7 +154,7 @@ defmodule PDFInfo do
       }
 
   """
-  @spec metadata_objects(binary) :: map
+  @spec metadata_objects(binary) :: list
   def metadata_objects(binary) when is_binary(binary) do
     binary
     |> raw_metadata_objects()
