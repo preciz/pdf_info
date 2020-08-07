@@ -18,12 +18,12 @@ defmodule PDFInfo do
   Returns `false` otherwise.
   """
   @spec is_pdf?(binary) :: boolean
-  def is_pdf?(<<"%PDF">> <> _), do: true
+  def is_pdf?(<<"%PDF-">> <> _), do: true
 
   def is_pdf?(binary) when is_binary(binary) do
     binary
     |> binary_part(0, min(1024, byte_size(binary)))
-    |> String.contains?("%PDF")
+    |> String.contains?("%PDF-")
   end
 
   @doc """
