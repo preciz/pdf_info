@@ -412,6 +412,9 @@ defmodule PDFInfo do
 
   def do_fix_octal_utf16(string) when is_binary(string) do
     String.to_charlist(string)
+  rescue
+    # TODO: how to treat this case better
+    UnicodeConversionError -> []
   end
 
   @doc false
