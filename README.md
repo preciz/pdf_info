@@ -56,7 +56,7 @@ iex(5)> PDFInfo.metadata_objects(pdf)
 
 ## Documentation
 
-Documentation can be be found at [https://hexdocs.pm/pdf_info](https://hexdocs.pm/pdf_info).
+Documentation can be found at [https://hexdocs.pm/pdf_info](https://hexdocs.pm/pdf_info).
 
 ## License
 

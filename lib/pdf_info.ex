@@ -153,22 +153,20 @@ defmodule PDFInfo do
   ## Examples
 
       iex> PDFInfo.metadata_objects(binary)
-      %{
-          "/Metadata 285 0 R" => [
-            %{
-              {"dc", "format"} => "application/pdf",
-              {"pdf", "Producer"} => "Adobe PDF Library 15.0",
-              {"xmp", "CreateDate"} => "2018-06-06T17:02:53+02:00",
-              {"xmp", "CreatorTool"} => "Acrobat PDFMaker 17 für Word",
-              {"xmp", "MetadataDate"} => "2018-06-06T17:03:13+02:00",
-              {"xmp", "ModifyDate"} => "2018-06-06T17:03:13+02:00",
-              ...
-            }
-          ]
-      }
+      [
+        %{
+          {"dc", "format"} => "application/pdf",
+          {"pdf", "Producer"} => "Adobe PDF Library 15.0",
+          {"xmp", "CreateDate"} => "2018-06-06T17:02:53+02:00",
+          {"xmp", "CreatorTool"} => "Acrobat PDFMaker 17 für Word",
+          {"xmp", "MetadataDate"} => "2018-06-06T17:03:13+02:00",
+          {"xmp", "ModifyDate"} => "2018-06-06T17:03:13+02:00",
+          ...
+        }
+      ]
 
   """
-  @spec metadata_objects(binary) :: list
+  @spec metadata_objects(binary) :: [map]
   def metadata_objects(binary) when is_binary(binary) do
     binary
     |> raw_metadata_objects()
