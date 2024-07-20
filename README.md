@@ -3,7 +3,7 @@
 ![Actions Status](https://github.com/preciz/pdf_info/workflows/test/badge.svg)
 
 Extracts all /Info and /Metadata objects from a PDF binary using Regex
-and without any dependencies.
+and with zero dependencies.
 
 Limitations:
 If the PDF is encrypted or the metadata is compressed you have to first decrypt and uncompress:
