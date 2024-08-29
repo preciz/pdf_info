@@ -329,6 +329,7 @@ defmodule PDFInfo do
       case :unicode.characters_to_binary(utf16, {:utf16, endianness}) do
         string when is_binary(string) -> string
         {:error, string, _} -> string
+        {:incomplete, string, _} -> string
       end
 
     {:ok, string}
